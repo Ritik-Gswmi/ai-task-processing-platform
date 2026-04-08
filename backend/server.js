@@ -39,9 +39,6 @@ app.use(
   })
 );
 
-/* IMPORTANT FOR PREFLIGHT REQUESTS */
-app.options("/*", cors());
-
 app.use(express.json());
 
 app.get("/", (req, res) => {
