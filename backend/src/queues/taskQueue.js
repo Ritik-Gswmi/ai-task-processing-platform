@@ -1,3 +1,4 @@
+
 const Redis = require("ioredis");
 
 const QUEUE_NAME = process.env.WORKER_QUEUE_NAME || "task_queue";
