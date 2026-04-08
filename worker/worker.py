@@ -41,6 +41,10 @@ def process_queue():
 # Start the worker in a background thread
 threading.Thread(target=process_queue, daemon=True).start()
 
+@app.route("/")
+def home():
+    return "Worker running", 200
+
 @app.route("/healthz")
 def health():
     return "ok", 200
