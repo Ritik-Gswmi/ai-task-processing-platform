@@ -16,6 +16,10 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("AI Task Processing Backend is Running 🚀");
+});
+
 app.get("/healthz", (_req, res) => {
   res.status(200).send("ok");
 });
