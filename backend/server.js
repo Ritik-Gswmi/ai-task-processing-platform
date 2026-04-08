@@ -40,7 +40,7 @@ app.use(
 );
 
 /* IMPORTANT FOR PREFLIGHT REQUESTS */
-app.options("*", cors());
+app.options("/*", cors());
 
 app.use(express.json());
 
