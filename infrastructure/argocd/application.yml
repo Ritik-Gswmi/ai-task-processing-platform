@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-task-processing-platform
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # TODO: change this to your *infra repo* (required by the assignment).
+    # Example: https://github.com/Ritik-Gswmi/ai-task-processing-platform-infra.git
+    repoURL: https://github.com/Ritik-Gswmi/ai-task-processing-platform-infra.git
+    targetRevision: main
+    path: infrastructure/kubernetes/overlays/prod
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ai-task-processing-platform
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

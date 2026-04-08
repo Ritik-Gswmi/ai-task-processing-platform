@@ -1,0 +1,217 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Ensuring global env is set; however, referencing it directly in jobs
+  # is more reliable if global context fails to resolve.
+  IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+
+# -----------------------------
+# 1️⃣ BASIC CHECKS (NON-BLOCKING)
+# -----------------------------
+  checks:
+    name: Basic Checks
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------- Frontend --------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run frontend lint (optional)
+        working-directory: frontend
+        run: npm run lint || true
+
+      # -------- Worker --------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python syntax check
+        run: |
+          if ls worker/*.py 1> /dev/null 2>&1; then
+            python -m py_compile worker/*.py || true
+          fi
+
+
+# -----------------------------
+# 2️⃣ BUILD & PUSH DOCKER IMAGES
+# -----------------------------
+  build-and-push:
+    name: Build and Push Docker Images
+    needs: checks
+    runs-on: ubuntu-latest
+    # Explicitly mapping secrets to job env ensures availability
+    env:
+      IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+
+    strategy:
+      matrix:
+        service: [backend, frontend, worker]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Secret Availability
+        run: |
+          if [ -z "$IMAGE_NAMESPACE" ]; then
+            echo "Error: IMAGE_NAMESPACE is empty. Check your DOCKERHUB_USERNAME secret."
+            exit 1
+          fi
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract commit SHA
+        id: vars
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/ai-task-processing-platform-${{ matrix.service }}:latest
+            ${{ env.IMAGE_NAMESPACE }}/ai-task-processing-platform-${{ matrix.service }}:${{ steps.vars.outputs.SHORT_SHA }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+
+# -----------------------------
+# 3️⃣ UPDATE INFRA REPO (GITOPS)
+# -----------------------------
+  update-infra-repo:
+    name: Update Infra Repo (GitOps)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+      INFRA_REPO: ${{ secrets.INFRA_REPO }}
+      INFRA_REPO_TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
+      INFRA_REPO_BRANCH: ${{ secrets.INFRA_REPO_BRANCH }}
+
+    steps:
+      - name: Check infra repo configuration
+        id: infra
+        shell: bash
+        run: |
+          if [ -z "$INFRA_REPO" ] || [ -z "$INFRA_REPO_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Infra repo secrets not set; skipping infra update."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout infra repo
+        if: ${{ steps.infra.outputs.enabled == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          token: ${{ env.INFRA_REPO_TOKEN }}
+          ref: ${{ env.INFRA_REPO_BRANCH || 'main' }}
+          path: infra
+
+      - name: Setup Python
+        if: ${{ steps.infra.outputs.enabled == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Update kustomize image tags
+        if: ${{ steps.infra.outputs.enabled == 'true' }}
+        working-directory: infra
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          namespace = os.environ.get("IMAGE_NAMESPACE")
+          tag = (os.environ.get("IMAGE_TAG") or "").strip()
+          if not namespace:
+            raise SystemExit("IMAGE_NAMESPACE is required (set DOCKERHUB_USERNAME secret).")
+          if not tag:
+            raise SystemExit("IMAGE_TAG is required.")
+
+          short_tag = tag[:7]
+          images = [
+            f"{namespace}/ai-task-processing-platform-backend",
+            f"{namespace}/ai-task-processing-platform-frontend",
+            f"{namespace}/ai-task-processing-platform-worker",
+          ]
+
+          def update_file(path: Path) -> bool:
+            original = path.read_text(encoding="utf-8")
+            text = original
+            changed = False
+            for image in images:
+              pattern = rf"(?ms)(^\s*-\s*name:\s*{re.escape(image)}\s*$.*?^\s*newName:\s*{re.escape(image)}\s*$.*?^\s*newTag:\s*)(\S+)\s*$"
+              text, count = re.subn(pattern, rf"\g<1>{short_tag}", text)
+              if count:
+                changed = True
+            if changed and text != original:
+              path.write_text(text, encoding="utf-8")
+              return True
+            return False
+
+          repo_root = Path(".").resolve()
+          files = list(repo_root.rglob("kustomization.yaml"))
+          any_changed = False
+          for f in files:
+            try:
+              any_changed = update_file(f) or any_changed
+            except UnicodeDecodeError:
+              continue
+
+          if any_changed:
+            print(f"Updated kustomize tags to {short_tag}.")
+          else:
+            print("No matching kustomize image blocks found; no changes made.")
+          PY
+
+      - name: Commit and push
+        if: ${{ steps.infra.outputs.enabled == 'true' }}
+        working-directory: infra
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No infra changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: bump images to $GITHUB_SHA"
+          git push

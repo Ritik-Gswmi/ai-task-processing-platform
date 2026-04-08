@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-task-processing-platform
+  namespace: argocd
+spec:
+  project: default
+
+  # Recommended GitOps layout:
+  # - App repo: source code + Dockerfiles + CI builds images
+  # - Infra repo: Kubernetes manifests (kustomize overlays) consumed by Argo CD
+  source:
+    repoURL: https://github.com/<your-user>/<your-infra-repo>
+    targetRevision: main
+    path: infrastructure/kubernetes/overlays/prod
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ai-task-processing-platform
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
