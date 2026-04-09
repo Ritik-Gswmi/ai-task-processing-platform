@@ -19,6 +19,7 @@ def update_task(task_id: str, status: str, result: str | None = None):
 
 def process_queue():
     print("Worker started. Waiting for tasks...")
+    print("Waiting for tasks in queue:", QUEUE_NAME)
     print("Mongo DB:", tasks_collection.database.name)
     print("Mongo Collection:", tasks_collection.name)
     while True:
