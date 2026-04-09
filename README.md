@@ -1,5 +1,14 @@
 # AI Task Processing Platform
 
+![React](https://img.shields.io/badge/Frontend-React-blue)
+![Node.js](https://img.shields.io/badge/Backend-Node.js-green)
+![Python](https://img.shields.io/badge/Worker-Python-yellow)
+![Redis](https://img.shields.io/badge/Queue-Redis-red)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Deploy](https://img.shields.io/badge/deploy-Vercel%20%7C%20Render-success)
+![Status](https://img.shields.io/badge/status-Active-brightgreen)
+
 A distributed platform for processing text “AI tasks” asynchronously using a MERN-style stack + a Python worker.
 
 ## Features
@@ -14,10 +23,13 @@ A distributed platform for processing text “AI tasks” asynchronously using a
 ## Live Deployment
 
 * **Frontend (React UI)**
-  https://your-frontend-url.vercel.app
+  https://ai-task-processing-platform.vercel.app/
 
 * **Backend API**
-  https://your-backend-url.onrender.com
+  https://ai-task-processing-platform.onrender.com
+
+* **Worker Service**
+  https://ai-task-processing-platform-1.onrender.com  
 
 ---
 
@@ -30,6 +42,24 @@ A distributed platform for processing text “AI tasks” asynchronously using a
 * DB: MongoDB (tasks/users)
 * Deploy: Docker Compose (local) + Kubernetes (GitOps via Argo CD)
 * CI/CD: GitHub Actions builds/pushes images and updates infra repo image tags
+
+Architecture: React + Node.js + Redis Queue + Python Worker + MongoDB Atlas deployed on Render & Vercel
+
+**Note:** The worker service is periodically pinged using UptimeRobot to prevent cold starts on free-tier hosting.
+
+---
+
+## System Flow
+
+```
+User → React Frontend
+     → Node.js API
+     → MongoDB (task stored as pending)
+     → Redis Queue
+     → Python Worker processes task
+     → MongoDB updated with result
+     → Frontend auto-refresh displays result
+```
 
 ---
 
@@ -49,19 +79,19 @@ A distributed platform for processing text “AI tasks” asynchronously using a
 
 ### Login Page
 
-![Login Screenshot](docs/screenshots/login.png)
+![Login Screenshot](docs/Screenshots/Login.png)
 
 ### Dashboard
 
-![Dashboard Screenshot](docs/screenshots/dashboard.png)
+![Dashboard Screenshot](docs/Screenshots/dashboard.png)
 
 ### Task Creation
 
-![Task Screenshot](docs/screenshots/create-task.png)
+![Task Screenshot](docs/Screenshots/create-task.png)
 
 ### Task Processing Result
 
-![Result Screenshot](docs/screenshots/result.png)
+![Result Screenshot](docs/Screenshots/result.png)
 
 ---
 
