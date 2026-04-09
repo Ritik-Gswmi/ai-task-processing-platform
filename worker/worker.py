@@ -19,6 +19,8 @@ def update_task(task_id: str, status: str, result: str | None = None):
 
 def process_queue():
     print("Worker started. Waiting for tasks...")
+    print("Mongo DB:", tasks_collection.database.name)
+    print("Mongo Collection:", tasks_collection.name)
     while True:
         task_data: Optional[List[str]] = cast(Optional[List[str]], redis_client.blpop(QUEUE_NAME))
         if task_data:
