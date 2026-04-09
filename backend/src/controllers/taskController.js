@@ -29,6 +29,13 @@ exports.createTask = async (req, res) => {
     operation
   });
 
+  //  Wake the worker service
+ try {
+  await fetch(process.env.WORKER_URL + "/healthz");
+  } catch (err) {
+  console.log("Worker wake request sent");
+  }
+
   res.json(task);
 };
 
