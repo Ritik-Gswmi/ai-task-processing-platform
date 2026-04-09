@@ -28,6 +28,9 @@ exports.createTask = async (req, res) => {
     input,
     operation
   });
+
+  // Wake worker service without blocking request
+  fetch(process.env.WORKER_URL + "/healthz").catch(() => {});
   
   res.json(task);
 };
