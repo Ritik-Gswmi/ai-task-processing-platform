@@ -83,7 +83,7 @@ User → React Frontend
 
 ### Dashboard
 
-![Dashboard Screenshot](docs/Screenshots/dashboard.png)
+![Dashboard Screenshot](docs/Screenshots/Dashboard.png)
 
 ### Task Creation
 
