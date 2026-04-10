@@ -9,8 +9,8 @@ function Sidebar({ sidebarOpen }) {
 
   return (
     <aside
-      style={{ willChange: "transform" }}
-      className={`fixed top-16 bottom-0 left-0 bg-gray-900 text-white transition-[width] duration-300 overflow-hidden transform-gpu ${
+      style={{ willChange: "transform", height: "calc(100dvh - 4rem)" }}
+      className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-gray-900 text-white transition-[width] duration-300 overflow-hidden transform-gpu ${
         sidebarOpen ? "w-64" : "w-16"
       }`}
     >
