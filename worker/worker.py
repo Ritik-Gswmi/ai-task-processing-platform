@@ -19,27 +19,43 @@ def update_task(task_id: str, status: str, result: str | None = None):
 
 def process_queue():
     print("Worker started. Waiting for tasks...")
-    print("Waiting for tasks in queue:", QUEUE_NAME)
+    print("Queue:", QUEUE_NAME)
     print("Mongo DB:", tasks_collection.database.name)
     print("Mongo Collection:", tasks_collection.name)
-    while True:
-        task_data: Optional[List[str]] = cast(Optional[List[str]], redis_client.blpop(QUEUE_NAME))
-        if task_data:
-            _, task_json = task_data
-            task = json.loads(task_json)
-            task_id = task.get("task_id") or task.get("taskId")
-            operation = task["operation"]
-            input_text = task["input"]
 
-            print(f"[Worker] Processing task {task_id} -> {operation}")
-            try:
-                update_task(task_id, "processing")
-                result = process_task(operation, input_text)
-                update_task(task_id, "completed", result)
-                print(f"[Worker] Task {task_id} completed: {result}")
-            except Exception as e:
-                update_task(task_id, "failed", str(e))
-                print(f"[Worker] Task {task_id} failed: {e}")
+    while True:
+        try:
+            # 🔥 Use LPOP instead of BLPOP
+            task_json = redis_client.lpop(QUEUE_NAME)
+
+            if task_json:
+                task = json.loads(task_json)
+                task_id = task.get("task_id") or task.get("taskId")
+                operation = task["operation"]
+                input_text = task["input"]
+
+                print(f"[Worker] Processing task {task_id} -> {operation}")
+
+                try:
+                    update_task(task_id, "processing")
+
+                    result = process_task(operation, input_text)
+
+                    update_task(task_id, "completed", result)
+
+                    print(f"[Worker] Task {task_id} completed: {result}")
+
+                except Exception as e:
+                    update_task(task_id, "failed", str(e))
+                    print(f"[Worker] Task {task_id} failed: {e}")
+
+            else:
+                # 🔥 Important: avoid CPU overuse
+                time.sleep(2)
+
+        except Exception as err:
+            print("Worker loop error:", err)
+            time.sleep(2)
 
 # Start the worker in a background thread
 threading.Thread(target=process_queue, daemon=True).start()
