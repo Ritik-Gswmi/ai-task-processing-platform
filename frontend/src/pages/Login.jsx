@@ -3,30 +3,41 @@ import API from "../api/api";
 import { setToken } from "../utils/token";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import Loader from "../components/Loader";
+import { withMinimumDelay } from "../utils/loading";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
   const login = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    // Login API call
-    const res = await API.post("/auth/login", { email, password });
+    try {
+      setLoading(true);
+      const res = await withMinimumDelay(
+        () => API.post("/auth/login", { email, password }),
+        900
+      );
 
-    // Save token and update context
-    setToken(res.data.token);
-    setUser({ token: res.data.token });
+      setToken(res.data.token);
+      sessionStorage.setItem("sidebarOpen", "true");
+      setUser({ token: res.data.token });
 
-    navigate("/dashboard"); // go to dashboard
-  } catch (err) {
-    // Show alert to user
-    alert(err.response?.data?.message || "Something went wrong");
+      navigate("/dashboard");
+    } catch (err) {
+      alert(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <Loader />;
   }
-};
 
   return (
     <form
@@ -52,13 +63,13 @@ function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        <button className="w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700">
           Login
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 hover:underline">
+          <Link to="/register" className="text-slate-700 hover:underline">
             Register
           </Link>
         </p>

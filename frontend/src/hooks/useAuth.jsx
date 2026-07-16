@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { removeToken } from "../utils/token";
+import { clearCurrentTask, removeToken } from "../utils/token";
 
 const AuthContext = createContext();
 
@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   // logout function
   const logout = (navigate) => {
     removeToken();      // remove JWT from localStorage
+    clearCurrentTask();
     setUser(null);      // clear context
     if (navigate) navigate("/login"); // redirect
   };

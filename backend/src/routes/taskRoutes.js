@@ -5,10 +5,12 @@ const protect = require("../middleware/authMiddleware");
 
 const {
   createTask,
-  getTasks
+  getTasks,
+  deleteTask
 } = require("../controllers/taskController");
 
 router.post("/", protect, createTask);
 router.get("/", protect, getTasks);
+router.delete("/:id", protect, deleteTask);
 
 module.exports = router;

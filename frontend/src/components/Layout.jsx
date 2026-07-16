@@ -1,26 +1,46 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 function Layout({ children }) {
+  const [sidebarOpen, setSidebarOpenState] = useState(() => {
+    const stored = sessionStorage.getItem("sidebarOpen");
+    return stored === null ? true : stored === "true";
+  });
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const setSidebarOpen = (value) => {
+    setSidebarOpenState((previous) => {
+      const nextValue =
+        typeof value === "function" ? value(previous) : value;
+      sessionStorage.setItem("sidebarOpen", String(nextValue));
+      return nextValue;
+    });
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem("sidebarOpen") === null) {
+      sessionStorage.setItem("sidebarOpen", "true");
+    }
+  }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-
-      <Navbar setSidebarOpen={setSidebarOpen} />
-
-      <Sidebar sidebarOpen={sidebarOpen} />
-
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <Navbar
+        setSidebarOpen={setSidebarOpen}
+        onLogout={() => logout(navigate)}
+      />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main
-        className={`pt-20 px-8 transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : "ml-16"
+        className={`pt-20 px-4 pb-8 transition-[margin] duration-300 sm:px-6 lg:px-8 ${
+          sidebarOpen ? "md:ml-64" : "md:ml-0"
         }`}
       >
-        {children}
+        <div className="mx-auto max-w-7xl">{children}</div>
       </main>
-
     </div>
   );
 }

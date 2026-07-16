@@ -9,12 +9,13 @@
 ![Deploy](https://img.shields.io/badge/deploy-Vercel%20%7C%20Render-success)
 ![Status](https://img.shields.io/badge/status-Active-brightgreen)
 
-A distributed platform for processing text “AI tasks” asynchronously using a MERN-style stack + a Python worker.
+A distributed platform for processing text "AI tasks" asynchronously using a MERN-style stack + a Python worker.
 
 ## Features
 
 * User registration & login (JWT)
 * Create tasks (uppercase, lowercase, reverse, word count)
+* Dashboard organized into `Create Tasks`, `Current Tasks`, `All Tasks`, and `Account`
 * Async processing via Redis queue + Python worker
 * Task status + results in MongoDB
 
@@ -77,9 +78,9 @@ User → React Frontend
 
 ## Screenshots
 
-### Login Page
+### Login
 
-![Login Screenshot](docs/Screenshots/Login.png)
+![Login Screenshot](docs/Screenshots/login.png)
 
 ### Dashboard
 
@@ -87,21 +88,90 @@ User → React Frontend
 
 ### Task Creation
 
-![Task Screenshot](docs/Screenshots/create-task.png)
+![Task Screenshot](docs/Screenshots/create-tasks.png)
 
-### Task Processing Result
+### Current Tasks
 
-![Result Screenshot](docs/Screenshots/result.png)
+![Result Screenshot](docs/Screenshots/current-tasks.png)
+
+### All Tasks
+
+![Result Screenshot](docs/Screenshots/all-tasks.png)
 
 ---
 
 ## Local Setup
+
+### Prerequisites
+
+* Node.js 18+ and npm
+* Python 3.10+
+* MongoDB connection string
+* Redis connection string
+
+### Option 1: Run locally without Docker
+
+1. Install frontend dependencies:
+
+```sh
+cd frontend
+npm install
+```
+
+2. Install backend dependencies:
+
+```sh
+cd ../backend
+npm install
+```
+
+3. Install worker dependencies:
+
+```sh
+cd ../worker
+pip install -r requirements.txt
+```
+
+4. Set environment variables:
+
+```sh
+copy .env.example backend\.env
+```
+
+Create `worker\.env` as well and add `MONGO_URI` and `REDIS_URL` there.
+
+Add your own values for `MONGO_URI`, `JWT_SECRET`, and `REDIS_URL` in the backend env file.
+
+5. Start the backend:
+
+```sh
+cd backend
+npm start
+```
+
+6. Start the worker:
+
+```sh
+cd worker
+python worker.py
+```
+
+7. Start the frontend:
+
+```sh
+cd frontend
+npm run dev
+```
+
+### Option 2: Run with Docker Compose
 
 From repo root:
 
 ```sh
 docker compose -f infrastructure/docker/docker-compose.yml up --build
 ```
+
+This starts the frontend, backend, worker, MongoDB, and Redis containers together.
 
 ---
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken, removeToken } from "../utils/token";
+import { clearCurrentTask, getToken, removeToken } from "../utils/token";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:5000/api" : "/api"),
@@ -28,6 +28,7 @@ API.interceptors.response.use(
     // Auto logout if token expired
     if (error.response?.status === 401) {
       removeToken();
+      clearCurrentTask();
     }
 
     return Promise.reject(error);

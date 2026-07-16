@@ -1,10 +1,14 @@
 function Loader() {
   return (
-    <div className="flex flex-col justify-center items-center min-h-[60vh]">
-      {/* Spinner */}
-      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      {/* Label */}
-      <p className="mt-4 text-gray-500 text-lg font-medium">Loading tasks...</p>
+    <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm">
+        <div className="flex items-center gap-2 text-lg font-medium text-slate-600">
+          <span>Loading</span>
+          <span className="loader-dot" />
+          <span className="loader-dot" style={{ animationDelay: "0.15s" }} />
+          <span className="loader-dot" style={{ animationDelay: "0.3s" }} />
+        </div>
+      </div>
     </div>
   );
 }
