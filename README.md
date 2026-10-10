@@ -148,15 +148,29 @@ cd ../worker
 pip install -r requirements.txt
 ```
 
-4. Set environment variables:
+4. Set up environment variables
 
-```sh
+Create the backend environment file using the example template in the repository root.
+
+Windows (Command Prompt):
+```bat
 copy .env.example backend\.env
 ```
 
-Create `worker\.env` as well and add `MONGO_URI` and `REDIS_URL` there.
+macOS/Linux:
+```bash
+cp .env.example backend/.env
+```
 
-Add your own values for `MONGO_URI`, `JWT_SECRET`, and `REDIS_URL` in the backend env file.
+Configure the following variables in `backend/.env` using your own credentials:
+
+- `MONGO_URI`
+- `REDIS_URL`
+- `JWT_SECRET`
+
+Create `worker/.env` and configure `MONGO_URI` and `REDIS_URL` for the Python worker.
+
+Ensure that environment files containing credentials are excluded from Git. Never commit real secrets or credentials to the repository.
 
 5. Start the backend:
 
