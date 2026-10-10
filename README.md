@@ -61,7 +61,23 @@ User → React Frontend
      → MongoDB updated with result
      → Frontend auto-refresh displays result
 ```
+---
 
+## Task Processing Details
+
+The platform supports asynchronous text-processing tasks through a Redis-backed queue and a Python worker.
+
+### Supported Operations
+
+- **Uppercase:** Converts input text to uppercase.
+- **Lowercase:** Converts input text to lowercase.
+- **Reverse:** Reverses the input text.
+- **Word Count:** Counts the words in the input text.
+
+### Task Lifecycle
+
+1. **Processing:** The Python worker picks up a task from the Redis queue and executes the requested operation.
+2. **Completed:** After successful processing, the result is saved to MongoDB and displayed in the frontend.
 ---
 
 ## Project Structure
